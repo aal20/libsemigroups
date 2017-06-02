@@ -89,8 +89,8 @@ namespace libsemigroups {
     //! parameter must consist of positive integers less than \p nrgens.
     //!
     //! This constructor returns an instance of a Congruence object whose type
-    //! is described by the string type. The congruence is defined over the
-    //! semigroup defined by the generators \p nrgens and relations \p relations
+    //! is described by the string \p type. The congruence is defined over the
+    //! semigroup defined by \p nrgens generators and the relations \p relations
     //! and is the least congruence containing the generating pairs in \p extra.
     //!
     //! For example, to compute a congruence over the free semigroup the
@@ -98,7 +98,7 @@ namespace libsemigroups {
     //! congruence to be constructed should be passed as the parameter \p
     //! extra. To compute a congruence over a finitely presented semigroup the
     //! relations defining the fintely presented semigroup must be passed as
-    //! the parameter \p relations and the the relations defining the
+    //! the parameter \p relations and the relations defining the
     //! congruence to be constructed should be passed as the parameter \p
     //! extra.
     Congruence(std::string                    type,
@@ -123,7 +123,7 @@ namespace libsemigroups {
     //! generators of \p semigroup (Semigroup::nrgens()).
     //!
     //! This constructor returns an instance of a Congruence object whose type
-    //! is described by the string type. The congruence is defined over the
+    //! is described by the string \p type. The congruence is defined over the
     //! Semigroup \p semigroup and is the least congruence containing the
     //! generating pairs in \p extra.
     Congruence(std::string                    type,
@@ -164,7 +164,7 @@ namespace libsemigroups {
     //!
     //! The parameters  \p w1  and \p w2 must be libsemigroups::word_t's
     //! consisting of indices of generators of the semigroup over which \c this
-    //! is defined over.
+    //! is defined.
     //!
     //! \warning The problem of determining the return value of this method is
     //! undecidable in general, and this method may never terminate.
@@ -213,6 +213,19 @@ namespace libsemigroups {
         };
         data = get_data(words_func);
       }
+
+      if (!_partial_data.empty()) {
+        assert(_data == nullptr);
+        // Delete the losers and clear _partial_data
+        for (size_t i = 0; i < _partial_data.size(); i++) {
+          if (_partial_data[i] != data) {
+            delete _partial_data[i];
+          }
+        }
+        _partial_data.clear();
+      }
+      _data = data;
+
       DATA::result_t result = data->current_less_than(w1, w2);
       assert(result != DATA::result_t::UNKNOWN);
       return result == DATA::result_t::TRUE;
@@ -254,8 +267,7 @@ namespace libsemigroups {
     //! over which the congruence is defined.
     //!
     //! This method is non-const since if the congruence is defined over a
-    //! Semigroup object, then we may have to obtain the relations of
-    //! Semigroup.
+    //! Semigroup object, then we may have to compute and store its relations.
     std::vector<relation_t> const& relations() {
       init_relations(_semigroup);
       return _relations;
@@ -272,7 +284,7 @@ namespace libsemigroups {
     //!
     //! This method allows the relations of the semigroup over which the
     //! congruence is defined to be specified. This method asserts that the
-    //! relations have not previously be specified.
+    //! relations have not previously been specified.
 
     // FIXME it would be better to provide a constructor from another
     // congruence that copied the relations.
@@ -298,8 +310,8 @@ namespace libsemigroups {
     //! * \p table should have RecVec::nr_cols equal to the number of generators
     //! of the semigroup over which \c this is defined
     //!
-    //! * every entry in \p table must be less than RecVec::nr_rows applied to
-    //! \p table
+    //! * every entry in \p table must be less than the number of rows in
+    //! \p table.
     //!
     //! For example, \p table can represent the right Cayley graph of a
     //! finite semigroup.
@@ -339,8 +351,7 @@ namespace libsemigroups {
 
     //! Sets how often the core methods of Congruence report.
     //!
-    //! The smaller this value the more will be reported, and the larger the
-    //! less.
+    //! The smaller this value, the more often information will be reported.
     void set_report_interval(size_t val) {
       if (_data != nullptr) {
         _data->set_report_interval(val);
@@ -357,7 +368,7 @@ namespace libsemigroups {
     //!
     //! \warning Any existing data for the congruence is deleted by this
     //! method, and may have to be recomputed. The return values and runtimes
-    //! of other methods applied to \c this may also be effected.
+    //! of other methods applied to \c this may also be affected.
     //!
     //! \warning The Todd-Coxeter Algorithm may never terminate when applied to
     //! a finitely presented semigroup.
@@ -382,32 +393,32 @@ namespace libsemigroups {
     //!
     //! \warning Any existing data for the congruence is deleted by this
     //! method, and may have to be recomputed. The return values and runtimes
-    //! of other methods applied to \c this may also be effected.
+    //! of other methods applied to \c this may also be affected.
     //!
     //! \warning The Todd-Coxeter Algorithm may never terminate when applied to
     //! a finitely presented semigroup.
     void force_tc_prefill();
 
-    //!  Use an elementary orbit algorithm which enumerates pairs of
-    //! Element's that are related in \c this.
+    //! Use an elementary orbit algorithm which enumerates pairs of
+    //! Element objects that are related in \c this.
     //!
-    //! The method that this method forces the Congruence to use, is unlikely
+    //! The method forced by this is unlikely
     //! to terminate, or to be faster than the other methods, unless there are
     //! a relatively few pairs of elements related by the congruence.
     //!
+    //! This method only applies to a congruence created using a Semigroup
+    //! object, and does not apply to finitely presented semigroups.
+    //!
     //! \warning Any existing data for the congruence is deleted by this
     //! method, and may have to be recomputed. The return values and runtimes
-    //! of other methods applied to \c this may also be effected.
+    //! of other methods applied to \c this may also be affected.
     //!
-    //! \warning The algorithms that this method forces a Congruence to use
-    //! will only terminate if there are finitely many pairs of elements
-    //! related by \c this. The worst case space complexity of these algorithms
+    //! \warning The worst case space complexity of these algorithms
     //! is the square of the size of the semigroup over which \c this is
     //! defined.
     void force_p();
 
-    //!  Use the Knuth-Bendix algorithm on a rewriting system RWS with
-    //! rules
+    //! Use the Knuth-Bendix algorithm on a rewriting system RWS with rules
     //! obtained from Congruence::relations followed by an elementary orbit on
     //! pairs method on the resulting semigroup.
     //!
@@ -415,17 +426,20 @@ namespace libsemigroups {
     //! algorithm](https://en.wikipedia.org/wiki/Knuth–Bendix_completion_algorithm)
     //! to compute the congruence defined by the generators and relations of \c
     //! this followed by an elementary orbit algorithm which enumerates pairs
-    //! of Element's of that semigroup which are related in \c this.
+    //! of Element objects of that semigroup which are related in \c this.
     //! Knuth-Bendix is applied to a rewriting system obtained from
     //! Congruence::relations.
     //!
-    //! At present the Knuth-Bendix algorithm can only be applied to two-sided
-    //! congruences, and this method asserts that \c this is a two-sided
-    //! congruence.
+    //! This method only applies to a congruence over a finitely presented
+    //! semigroups, and does not apply to a congruence defined using a concrete
+    //! Semigroup object.
+    //!
+    //! Note that this algorithm can be applied to left, right, and two-sided
+    //! congruences (unlike KBFP).
     //!
     //! \warning Any existing data for the congruence is deleted by this
     //! method, and may have to be recomputed. The return values and runtimes
-    //! of other methods applied to \c this may also be effected.
+    //! of other methods applied to \c this may also be affected.
     //!
     //! \warning The Knuth-Bendix Algorithm may never terminate when applied to
     //! a finitely presented semigroup. Even if Knuth-Bendix completes
@@ -436,7 +450,7 @@ namespace libsemigroups {
     //! defined.
     void force_kbp();
 
-    //! Use the Knuth-Bendix algorithm on a rewriting system RWS with ! rules
+    //! Use the Knuth-Bendix algorithm on a rewriting system RWS with rules
     //! obtained from Congruence::relations and Congruence::extra, followed by
     //! the Froidure-Pin algorithm on the resulting semigroup.
     //!
@@ -454,11 +468,19 @@ namespace libsemigroups {
     //!
     //! \warning Any existing data for the congruence is deleted by this
     //! method, and may have to be recomputed. The return values and runtimes
-    //! of other methods applied to \c this may also be effected.
+    //! of other methods applied to \c this may also be affected.
     //!
     //! \warning The Knuth-Bendix Algorithm may never terminate when applied to
     //! a finitely presented semigroup.
     void force_kbfp();
+
+    //! This method tries to quickly determine whether or not the Congruence
+    //! has infinitely many classes.
+    //!
+    //! If \c true is returned, then there are infinitely many classes in the
+    //! congruence, but if \c false is returned, then the method could not
+    //! determine whether or not there are infinitely many classes.
+    bool is_obviously_infinite();
 
    private:
     // Subclasses of DATA
@@ -629,6 +651,8 @@ namespace libsemigroups {
 
     DATA*                   _data;
     std::vector<relation_t> _extra;
+    std::mutex              _init_mtx;
+    std::mutex              _kill_mtx;
     size_t                  _max_threads;
     size_t                  _nrgens;
     std::vector<DATA*>      _partial_data;
@@ -637,7 +661,6 @@ namespace libsemigroups {
     std::atomic<bool>       _relations_done;
     Semigroup*              _semigroup;
     cong_t                  _type;
-    std::mutex              _mtx;
 
     static size_t const INFTY;
     static size_t const UNDEFINED;
