@@ -799,6 +799,24 @@ namespace libsemigroups {
     }
   };
 
+  template <typename T> class Permutation : public Transformation<T> {
+  public:
+    using Transformation<T>::Transformation;
+    using Transformation<T>::UNDEFINED;
+    //! Returns the inverse of a permutation.
+    //!
+    //! The *inverse* of a permutation \f$f\f$ is the permutation \f$g\f$ such
+    //! that \f$fg = gf\f$ is the identity permutation of degree \f$n\f$.
+    Permutation *inverse() {
+      size_t const n = this->_vector->size();
+      Permutation *id = static_cast<Permutation<T> *>(this->identity());
+      for (T i = 0; i < n; i++) {
+        (*id->_vector)[(*this->_vector)[i]] = i;
+      }
+      return id;
+    }
+  };
+
   //! Class for bipartitions.
   //!
   //! A *bipartition* is a partition of the set
