@@ -21,28 +21,22 @@
 #include <algorithm>
 #include <string>
 
-#ifdef RWS_STATS
-static size_t                                        MAX_STACK_DEPTH        = 0;
-static size_t                                        MAX_WORD_LENGTH        = 0;
-static size_t                                        MAX_ACTIVE_WORD_LENGTH = 0;
-static size_t                                        MAX_ACTIVE_RULES       = 0;
-static std::unordered_set<libsemigroups::rws_word_t> UNIQUE_LHS_RULES;
-
-static size_t max_active_word_length(libsemigroups::RWS* rws) {
-  auto comp
-      = [](libsemigroups::RWS::Rule* p, libsemigroups::RWS::Rule* q) -> bool {
-    return p->lhs()->size() < q->lhs()->size();
-  };
-  auto max = std::max_element(rws->rules_cbegin(), rws->rules_cend(), comp);
-  if (max != rws->rules_cend()) {
-    MAX_ACTIVE_WORD_LENGTH
-        = std::max(MAX_ACTIVE_WORD_LENGTH, (*max)->lhs()->size());
-  }
-  return MAX_ACTIVE_WORD_LENGTH;
-}
-#endif
-
 namespace libsemigroups {
+
+#ifdef LIBSEMIGROUPS_STATS
+  size_t RWS::max_active_word_length() {
+    auto comp = [](libsemigroups::RWS::Rule const* p,
+                   libsemigroups::RWS::Rule const* q) -> bool {
+      return p->lhs()->size() < q->lhs()->size();
+    };
+    auto max = std::max_element(rules_cbegin(), rules_cend(), comp);
+    if (max != rules_cend()) {
+      _max_active_word_length
+          = std::max(_max_active_word_length, (*max)->lhs()->size());
+    }
+    return _max_active_word_length;
+  }
+#endif
 
   RWS::~RWS() {
     delete _order;
@@ -108,12 +102,12 @@ namespace libsemigroups {
   }
 
   void RWS::add_rule(Rule* rule) {
-#ifdef RWS_STATS
-    MAX_WORD_LENGTH  = std::max(MAX_WORD_LENGTH, rule->lhs()->size());
-    MAX_ACTIVE_RULES = std::max(MAX_ACTIVE_RULES, _active_rules.size());
-    UNIQUE_LHS_RULES.insert(*rule->lhs());
+#ifdef LIBSEMIGROUPS_STATS
+    _max_word_length  = std::max(_max_word_length, rule->lhs()->size());
+    _max_active_rules = std::max(_max_active_rules, _active_rules.size());
+    _unique_lhs_rules.insert(*rule->lhs());
 #endif
-    assert(rule->lhs() != rule->rhs());
+    LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
     rule->activate();
     _active_rules.push_back(rule);
     // clear_stack relies on the fact that new rules are added to the end of
@@ -129,8 +123,8 @@ namespace libsemigroups {
 
   std::list<RWS::Rule const*>::iterator
   RWS::remove_rule(std::list<RWS::Rule const*>::iterator it) {
-#ifdef RWS_STATS
-    UNIQUE_LHS_RULES.erase(*((*it)->lhs()));
+#ifdef LIBSEMIGROUPS_STATS
+    _unique_lhs_rules.erase(*((*it)->lhs()));
 #endif
     Rule* rule = const_cast<Rule*>(*it);
     rule->deactivate();
@@ -293,14 +287,14 @@ namespace libsemigroups {
   // TEST_2 from Sims, p76
   void RWS::clear_stack(std::atomic<bool>& killed) {
     while (!_stack.empty() && !killed) {
-#ifdef RWS_STATS
-      MAX_STACK_DEPTH = std::max(MAX_STACK_DEPTH, _stack.size());
+#ifdef LIBSEMIGROUPS_STATS
+      _max_stack_depth = std::max(_max_stack_depth, _stack.size());
 #endif
 
       Rule* rule1 = _stack.top();
       _stack.pop();
       // Rewrite both sides and reorder if necessary . . .
-      assert(!rule1->is_active());
+      LIBSEMIGROUPS_ASSERT(!rule1->is_active());
       rule1->rewrite();
       if (*rule1->lhs() != *rule1->rhs()) {
         add_rule(rule1);  // rule1 is activated
@@ -326,12 +320,12 @@ namespace libsemigroups {
                                  << _inactive_rules.size()
                                  << ", rules defined = "
                                  << _total_rules);
-#ifdef RWS_STATS
-        REPORT("max stack depth        = " << MAX_STACK_DEPTH);
-        REPORT("max word length        = " << MAX_WORD_LENGTH);
-        REPORT("max active word length = " << max_active_word_length(this));
-        REPORT("max active rules       = " << MAX_ACTIVE_RULES);
-        REPORT("number of unique lhs   = " << UNIQUE_LHS_RULES.size());
+#ifdef LIBSEMIGROUPS_STATS
+        REPORT("max stack depth        = " << _max_stack_depth);
+        REPORT("max word length        = " << _max_word_length);
+        REPORT("max active word length = " << max_active_word_length());
+        REPORT("max active rules       = " << _max_active_rules);
+        REPORT("number of unique lhs   = " << _unique_lhs_rules.size());
 #endif
         _report_next = 0;
       }
@@ -340,7 +334,7 @@ namespace libsemigroups {
 
   // OVERLAP_2 from Sims, p77
   void RWS::overlap(Rule const* u, Rule const* v, std::atomic<bool>& killed) {
-    assert(u->is_active() && v->is_active());
+    LIBSEMIGROUPS_ASSERT(u->is_active() && v->is_active());
     size_t m = std::min(u->lhs()->size(), v->lhs()->size()) - 1;
 
     for (size_t k = 1; k <= m && u->is_active() && v->is_active() && !killed;
@@ -361,7 +355,7 @@ namespace libsemigroups {
                               u->rhs()->cend());
         rule->_lhs->append(*v->rhs());             // Q_j
         rule->_rhs->append(it, v->lhs()->cend());  // C
-        assert(rule->lhs() != rule->rhs());
+        LIBSEMIGROUPS_ASSERT(rule->lhs() != rule->rhs());
         _stack.emplace(rule);
         clear_stack(killed);
       }
@@ -418,8 +412,8 @@ namespace libsemigroups {
                                          << _inactive_rules.size()
                                          << ", rules defined = "
                                          << _total_rules);
-#ifdef RWS_STATS
-      REPORT("max stack depth = " << MAX_STACK_DEPTH);
+#ifdef LIBSEMIGROUPS_STATS
+      REPORT("max stack depth = " << _max_stack_depth);
 #endif
     }
   }

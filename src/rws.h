@@ -141,6 +141,12 @@ namespace libsemigroups {
           _total_rules(0) {
       _next_rule_it1 = _active_rules.end();  // null
       _next_rule_it2 = _active_rules.end();  // null
+#ifdef LIBSEMIGROUPS_STATS
+      _max_stack_depth        = 0;
+      _max_word_length        = 0;
+      _max_active_word_length = 0;
+      _max_active_rules       = 0;
+#endif
     }
 
     //! Constructs a rewriting system with no rules, and the SHORTLEX
@@ -398,6 +404,15 @@ namespace libsemigroups {
     size_t                           _report_interval;
     std::stack<Rule*>                _stack;
     mutable size_t                   _total_rules;
+
+#ifdef LIBSEMIGROUPS_STATS
+    size_t                         max_active_word_length();
+    size_t                         _max_stack_depth;
+    size_t                         _max_word_length;
+    size_t                         _max_active_word_length;
+    size_t                         _max_active_rules;
+    std::unordered_set<rws_word_t> _unique_lhs_rules;
+#endif
   };
 
   //! Class for rules in rewriting systems, which supports only two methods,
@@ -438,7 +453,7 @@ namespace libsemigroups {
     // them in its destructor.
     Rule(RWS const* rws, rws_word_t* p, rws_word_t* q)
         : _rws(rws), _lhs(p), _rhs(q), _active(false) {
-      assert(*_lhs != *_rhs);
+      LIBSEMIGROUPS_ASSERT(*_lhs != *_rhs);
       reorder();
     }
 

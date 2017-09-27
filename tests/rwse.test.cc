@@ -26,14 +26,7 @@
 
 using namespace libsemigroups;
 
-template <typename T> static inline void really_delete_cont(T cont) {
-  for (Element* x : cont) {
-    x->really_delete();
-    delete x;
-  }
-}
-
-TEST_CASE("RWSE 01:", "[quick][rwse]") {
+TEST_CASE("RWSE 01:", "[quick][rwse][01]") {
   std::vector<Element*> gens
       = {new Transformation<u_int16_t>({1, 0}),
          new Transformation<u_int16_t>(std::vector<u_int16_t>({0, 0}))};
@@ -70,7 +63,7 @@ TEST_CASE("RWSE 01:", "[quick][rwse]") {
   b.really_delete();
 }
 
-TEST_CASE("RWSE 02: factorisation", "[quick][rwse]") {
+TEST_CASE("RWSE 02: factorisation", "[quick][rwse][02]") {
   std::vector<Element*> gens
       = {new Transformation<u_int16_t>({1, 0}),
          new Transformation<u_int16_t>(std::vector<u_int16_t>({0, 0}))};
@@ -92,11 +85,15 @@ TEST_CASE("RWSE 02: factorisation", "[quick][rwse]") {
   word_t* w = T.factorisation(&ab);
   REQUIRE(*w == word_t({1}));
   delete w;
-  ab.really_delete();
 
   RWSE aaa(rws, word_t({0, 0, 0}));
   w = T.factorisation(&aaa);
   REQUIRE(*w == word_t({0}));
   delete w;
+
+  aaa.copy(&ab);
+  REQUIRE(aaa == ab);
+
   aaa.really_delete();
+  ab.really_delete();
 }

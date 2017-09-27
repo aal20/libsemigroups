@@ -36,13 +36,6 @@
 
 namespace libsemigroups {
 
-  template <typename T> static inline void really_delete_cont(T cont) {
-    for (Element* x : cont) {
-      x->really_delete();
-      delete x;
-    }
-  }
-
   void Congruence::KBFP::init() {
     if (_semigroup != nullptr) {
       return;
@@ -51,7 +44,7 @@ namespace libsemigroups {
     _rws->add_rules(_cong.relations());
     _rws->add_rules(_cong.extra());
 
-    assert(_cong._semigroup == nullptr || !_cong.extra().empty());
+    LIBSEMIGROUPS_ASSERT(_cong._semigroup == nullptr || !_cong.extra().empty());
 
     REPORT("running Knuth-Bendix . . .")
     _rws->knuth_bendix(_killed);
@@ -60,8 +53,8 @@ namespace libsemigroups {
       return;
     }
 
-    assert(_rws->is_confluent());
-    std::vector<Element*> gens;
+    LIBSEMIGROUPS_ASSERT(_rws->is_confluent());
+    std::vector<Element const*> gens;
     for (size_t i = 0; i < _cong._nrgens; i++) {
       gens.push_back(new RWSE(*_rws, i));
     }
@@ -76,7 +69,7 @@ namespace libsemigroups {
   }
 
   void Congruence::KBFP::run(size_t steps) {
-    assert(!is_done());
+    LIBSEMIGROUPS_ASSERT(!is_done());
 
     init();
 
@@ -98,13 +91,13 @@ namespace libsemigroups {
 
   Congruence::class_index_t
   Congruence::KBFP::word_to_class_index(word_t const& word) {
-    assert(is_done());  // so that _semigroup != nullptr
+    LIBSEMIGROUPS_ASSERT(is_done());  // so that _semigroup != nullptr
 
     Element* x   = new RWSE(*_rws, word);
     size_t   pos = _semigroup->position(x);
     x->really_delete();
     delete x;
-    assert(pos != Semigroup::UNDEFINED);
+    LIBSEMIGROUPS_ASSERT(pos != Semigroup::UNDEFINED);
     return pos;
   }
 

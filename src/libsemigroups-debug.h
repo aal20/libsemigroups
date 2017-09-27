@@ -1,6 +1,6 @@
 //
 // libsemigroups - C++ library for semigroups and monoids
-// Copyright (C) 2016 James D. Mitchell
+// Copyright (C) 2017 James D. Mitchell
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,27 +16,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../src/semiring.h"
-#include "catch.hpp"
+// This file declares debugging functionality.
 
-using namespace libsemigroups;
+#ifndef LIBSEMIGROUPS_SRC_LIBSEMIGROUPS_DEBUG_H_
+#define LIBSEMIGROUPS_SRC_LIBSEMIGROUPS_DEBUG_H_
 
-TEST_CASE("Semiring 01: threshold/period [NaturalSemiring]",
-          "[quick][semiring") {
-  NaturalSemiring* sr = new NaturalSemiring(10, 314);
+#include <assert.h>
 
-  REQUIRE(sr->threshold() == 10);
-  REQUIRE(sr->period() == 314);
-  delete sr;
-}
+// Do not include config/config.h if we are compiling inside the Semigroups
+// package for GAP since this includes gap/gen/config.h where the PACKAGE_*
+// macros are redefined, causing compiler warnings.
+#ifndef DO_NOT_INCLUDE_CONFIG_H
+#include <libsemigroups-config.h>
+#endif
 
-TEST_CASE("Semiring 02: threshold 0 [NaturalSemiring]", "[quick][semiring") {
-  NaturalSemiring* sr = new NaturalSemiring(0, 7);
+#ifdef LIBSEMIGROUPS_DEBUG
+#define LIBSEMIGROUPS_ASSERT(x) assert(x)
+#else
+#define LIBSEMIGROUPS_ASSERT(x)
+#endif
 
-  REQUIRE(sr->threshold() == 0);
-  REQUIRE(sr->period() == 7);
-  REQUIRE(sr->plus(5, 6) == 4);
-  REQUIRE(sr->prod(5, 6) == 2);
-
-  delete sr;
-}
+#endif  // LIBSEMIGROUPS_SRC_LIBSEMIGROUPS_DEBUG_H_
