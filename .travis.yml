@@ -64,9 +64,15 @@ matrix:
     #   env: TEST_SUITE=quick
     #   compiler: clang
     #   osx_image: xcode8
+<<<<<<< 2112eaa8862e0564bf3d48e6b1065b76f071e4fb
     # - os: osx
     #   osx_image: xcode8
     #   env: TEST_SUITE=quick MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+=======
+    - os: osx
+      osx_image: xcode8
+      env: TEST_SUITE=quick MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+>>>>>>> Remove some whitespace from .travis.yml causing build failures
 before_install:
     - eval "${MATRIX_EVAL}"
     - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository ppa:dns/gnu -y; fi
